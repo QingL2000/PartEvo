@@ -37,7 +37,8 @@ PartEvo (Partition to Evolve) is a novel framework that deeply integrates Large 
 
 <img src="./docs/figures/PartEvo.jpg" alt="partevo" width="600" height="280" div align=center>
 
-The PartEvo project will be standardized and integrated into the LLM4AD Platform (https://github.com/Optima-CityU/LLM4AD) in the future for academic comparison and usage. Please stay tuned.
+<span style="color:red">‼️ </span> The **PartEvo** project will be further refined and standardized in the near future, with a more accessible and streamlined version being integrated into the **LLM4AD Platform** ([LLM4AD GitHub Repository](https://github.com/Optima-CityU/LLM4AD)) for academic comparison 📊 and broader usage ⚙️. Stay tuned for an exciting and polished update 🔔!
+
 
 ## Introduction 📖
 
