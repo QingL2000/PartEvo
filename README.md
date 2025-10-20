@@ -35,7 +35,7 @@ A Niching-enhanced Evolution with LLMs for Automated Algorithm Discovery
 PartEvo (Partition to Evolve) is a novel framework that deeply integrates Large Language Model-assisted Evolutionary Search
 (LES) with Niching strategies. It is designed to significantly boost the efficiency and efficacy of Automated Algorithm Discovery (AAD) in abstract language search spaces.
 
-<img src="./docs/figures/PartEvo.JPG" alt="partevo" width="600" height="280" div align=center>
+<img src="./docs/figures/PartEvo.jpg" alt="partevo" width="600" height="280" div align=center>
 
 The PartEvo project will be standardized and integrated into the LLM4AD Platform (https://github.com/Optima-CityU/LLM4AD) in the future for academic comparison and usage. Please stay tuned.
 
