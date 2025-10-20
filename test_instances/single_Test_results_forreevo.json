@@ -1,0 +1,88 @@
+[
+    {
+        "Method": "PartEvo",
+        "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\freeinit\\partevo\\p1\\202501231723single_peak_free_AST_0.0\\best_sample_log.json",
+        "code": "import numpy as np\nfrom scipy.optimize import minimize\n\ndef algo(initial_population, individual_upper, individual_lower, objective_function):\n    max_evaluations = 30000\n    evaluations = 0\n    num_individuals, num_dimensions = initial_population.shape\n    population = initial_population.copy()\n    best_solution = population[np.argmin([objective_function(ind) for ind in population])]\n    \n    while evaluations < max_evaluations:\n        niche_fitness = np.array([objective_function(ind) for ind in population])\n        best_niche_indices = np.argsort(niche_fitness)[:num_individuals // 5]\n        \n        for i in range(num_individuals):\n            mutation_strategy = np.random.choice(['best', 'rand'])\n            if mutation_strategy == 'best':\n                mutation_vector = best_solution + np.random.uniform(-0.5, 0.5, num_dimensions)\n            else:\n                indices = np.random.permutation(num_individuals)[:3]\n                x1, x2, x3 = population[indices]\n                mutation_vector = x1 + 0.5 * (x2 - x3)\n            mutation_vector = np.clip(mutation_vector, individual_lower, individual_upper)\n            crossover_mask = np.random.rand(num_dimensions) < 0.5\n            trial_vector = np.where(crossover_mask, mutation_vector, population[i])\n            trial_vector = np.clip(trial_vector, individual_lower, individual_upper)\n            \n            new_fitness = objective_function(trial_vector)\n            evaluations += 1\n            \n            if new_fitness < niche_fitness[i]:\n                population[i] = trial_vector\n                if new_fitness < objective_function(best_solution):\n                    best_solution = trial_vector\n        \n        for idx in best_niche_indices:\n            local_search_candidate = minimize(objective_function, population[idx], bounds=list(zip(individual_lower, individual_upper))).x\n            new_local_fitness = objective_function(local_search_candidate)\n            evaluations += 1\n            \n            if new_local_fitness < objective_function(best_solution):\n                best_solution = local_search_candidate\n\n        if np.std(niche_fitness) < 1e-5:\n            break\n\n    return best_solution",
+        "fitnesses": [
+            2.3471217497679055e-16,
+            8.976468013344174e-09,
+            1.7188823000889366e-16,
+            3.643203003694503e-16,
+            1.402794465453952e-76,
+            2.090715549946423e-11,
+            5.071588352746003e-16
+        ],
+        "total_fitness": 8.997376446923179e-09
+    },
+    {
+        "Method": "Funsearch",
+        "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\freeinit\\funsearch_2\\single_1\\20250122_144131_Problem_Method\\samples\\samples_best.json",
+        "code": "import numpy as np\ndef algo(initial_population: np.ndarray, individual_upper: np.ndarray, individual_lower: np.ndarray, objective_function: callable) -> np.ndarray:\n    \"\"\"\n    An algorithm for solving a minimization optimization problem. It allows up to 30,000 calls to the objective_function to evaluate solutions.\n    \n    Args:\n    initial_population: np.ndarray\n        A 2D array where each row represents an individual solution in the initial population.\n    individual_upper: np.ndarray\n        A 1D array representing the upper bounds for each dimension of the solution.\n    individual_lower: np.ndarray\n        A 1D array representing the lower bounds for each dimension of the solution.\n    objective_function: callable\n        A Python function used to compute the objective value of candidate solutions. Lower objective values indicate better solutions.\n\n    Returns:\n    np.ndarray\n        The best solution found by the algorithm after 30,000 evaluations.\n    \"\"\"\n    population_size, num_vars = initial_population.shape\n    max_evaluations = 30000\n    evaluations = population_size\n\n    # Evaluate initial population\n    personal_best = initial_population.copy()\n    personal_best_fitness = np.array([objective_function(ind) for ind in personal_best])\n    best_solution = personal_best[np.argmin(personal_best_fitness)]\n    best_fitness = np.min(personal_best_fitness)\n\n    # Adaptive parameters\n    mutation_factor = 0.5\n    crossover_probability = 0.9\n    elitism_rate = 0.1  # Keep the best 10% of the population\n\n    while evaluations < max_evaluations:\n        new_population = np.empty_like(personal_best)\n        \n        # Keep a portion of the elite solutions\n        elite_count = int(elitism_rate * population_size)\n        elite_indices = np.argsort(personal_best_fitness)[:elite_count]\n        new_population[:elite_count] = personal_best[elite_indices]\n\n        for i in range(elite_count, population_size):\n            # Select three distinct random individuals from the current population\n            indices = list(range(population_size))\n            indices.remove(elite_indices[i % elite_count])  # Ensure distinct individuals\n            a, b, c = np.random.choice(indices, 3, replace=False)\n\n            # Differential mutation\n            mutant_vector = personal_best[a] + mutation_factor * (personal_best[b] - personal_best[c])\n            mutant_vector = np.clip(mutant_vector, individual_lower, individual_upper)\n\n            # Crossover\n            mask = np.random.rand(num_vars) < crossover_probability\n            trial_vector = np.where(mask, mutant_vector, personal_best[i])\n\n            # Evaluate the trial vector\n            trial_fitness = objective_function(trial_vector)\n            evaluations += 1\n\n            # Update personal best\n            if trial_fitness < personal_best_fitness[i]:\n                new_population[i] = trial_vector\n                personal_best_fitness[i] = trial_fitness\n\n                # Update global best if necessary\n                if trial_fitness < best_fitness:\n                    best_solution = trial_vector\n                    best_fitness = trial_fitness\n            else:\n                new_population[i] = personal_best[i]  # Retain the best if trial failed\n\n        # Update the personal best population with new population\n        personal_best = new_population\n\n        # Break if we've reached the maximum number of evaluations\n        if evaluations >= max_evaluations:\n            break\n\n    return best_solution\n\n",
+        "fitnesses": [
+            4.9111655879396557e-08,
+            1.1551485065611797,
+            0.004893859211806929,
+            0.07314134415714975,
+            0.0,
+            1.0243714691600346e-20,
+            4.037550398012635e-12
+        ],
+        "total_fitness": 1.2331837590458299
+    },
+    {
+        "Method": "EoH",
+        "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\freeinit\\eoh\\single_2\\20250121_110337_Problem_EoH\\samples\\samples_best.json",
+        "code": "import numpy as np\ndef algo(initial_population: np.ndarray, individual_upper: np.ndarray, individual_lower: np.ndarray, objective_function: callable) -> np.ndarray:\n    \"\"\"\n    An algorithm for solving a minimization optimization problem. It allows up to 30,000 calls to the objective_function to evaluate solutions.\n    \n    Args:\n    initial_population: np.ndarray\n        A 2D array where each row represents an individual solution in the initial population.\n    individual_upper: np.ndarray\n        A 1D array representing the upper bounds for each dimension of the solution.\n    individual_lower: np.ndarray\n        A 1D array representing the lower bounds for each dimension of the solution.\n    objective_function: callable\n        A Python function used to compute the objective value of candidate solutions. Lower objective values indicate better solutions.\n\n    Returns:\n    np.ndarray\n        The best solution found by the algorithm after 30,000 evaluations.\n    \"\"\"\n    max_evaluations = 30000\n    evaluations = 0\n    population_size, dimensions = initial_population.shape\n    population = initial_population.copy()\n    \n    # Evaluate initial population\n    fitness = np.array([objective_function(ind) for ind in population])\n    evaluations += population_size\n\n    # Adaptive settings\n    mutation_factor_base = 0.5\n    crossover_rate_base = 0.7\n\n    for _ in range(max_evaluations - population_size):\n        for i in range(population_size):\n            # Select three distinct individuals for mutation\n            indices = list(range(population_size))\n            indices.remove(i)\n            a, b, c = np.random.choice(indices, 3, replace=False)\n\n            # Create a mutated vector with adaptive mutation factor\n            mutation_factor = mutation_factor_base + np.random.rand() * 0.5  # Adaptive mutation factor\n            mutant = np.clip(population[a] + mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n\n            # Crossover to create trial vector with adaptive crossover rate\n            crossover_rate = crossover_rate_base + np.random.rand() * 0.3  # Adaptive crossover rate\n            trial = np.copy(population[i])\n            for j in range(dimensions):\n                if np.random.rand() < crossover_rate or j == np.random.randint(dimensions):\n                    trial[j] = mutant[j]\n\n            # Evaluate trial vector\n            trial_fitness = objective_function(trial)\n            evaluations += 1\n\n            # Selection process\n            if trial_fitness < fitness[i]:\n                population[i] = trial\n                fitness[i] = trial_fitness\n\n    # Return the best solution found\n    best_index = np.argmin(fitness)\n    return population[best_index]\n\n",
+        "fitnesses": [
+            0.0,
+            3.9968028886505635e-15,
+            0.0,
+            1.9496877174604149e-31,
+            0.0,
+            7.440151952041672e-43,
+            7.440151952041672e-43
+        ],
+        "total_fitness": 3.9968028886505635e-15
+    },
+    {
+        "Method": "ReEvo",
+        "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\freeinit\\reevo\\single_5\\20250807_231829\\samples\\samples_best.json",
+        "code": "import numpy as np\ndef algo(initial_population: np.ndarray, individual_upper: np.ndarray, individual_lower: np.ndarray, objective_function: callable) -> np.ndarray:\n    \"\"\"\n    An algorithm for solving a minimization optimization problem. It allows up to 30,000 calls to the objective_function to evaluate solutions.\n    \n    Args:\n    initial_population: np.ndarray\n        A 2D array where each row represents an individual solution in the initial population.\n    individual_upper: np.ndarray\n        A 1D array representing the upper bounds for each dimension of the solution.\n    individual_lower: np.ndarray\n        A 1D array representing the lower bounds for each dimension of the solution.\n    objective_function: callable\n        A Python function used to compute the objective value of candidate solutions. Lower objective values indicate better solutions.\n\n    Returns:\n    np.ndarray\n        The best solution found by the algorithm after 30,000 evaluations.\n    \"\"\"\n    population_size, num_vars = initial_population.shape\n    evaluations = population_size\n    best_solution = initial_population[0]\n    best_fitness = objective_function(best_solution)\n    \n    personal_best = initial_population.copy()\n    personal_best_fitness = np.array([objective_function(ind) for ind in personal_best])\n    \n    inertia_weight = 0.7\n    cognitive_factor = 1.5\n    social_factor = 1.5\n\n    diversity_threshold = np.percentile(personal_best_fitness, 70)\n\n    while evaluations < 30000:\n        new_solutions = np.zeros((population_size, num_vars))\n\n        for i in range(population_size):\n            r1, r2 = np.random.rand(2)\n            global_best = personal_best[np.argmin(personal_best_fitness)]\n            \n            new_solution = (inertia_weight * personal_best[i] +\n                            cognitive_factor * r1 * (global_best - personal_best[i]) +\n                            social_factor * r2 * (np.random.uniform(0.01, 0.1) * (individual_upper - individual_lower)))\n            new_solution = np.clip(new_solution, individual_lower, individual_upper)\n\n            if np.random.rand() < 0.1:  # 10% chance for adaptive mutation\n                distance_to_best = np.abs(new_solution - global_best)\n                mutation_strength = 0.1 * distance_to_best\n                mutation = mutation_strength * np.random.uniform(-1, 1, size=num_vars)\n                new_solution = np.clip(new_solution + mutation, individual_lower, individual_upper)\n\n            new_solutions[i] = new_solution\n\n        new_fitness = np.array([objective_function(ind) for ind in new_solutions])\n        evaluations += population_size\n\n        combined_population = np.vstack((personal_best, new_solutions))\n        combined_fitness = np.hstack((personal_best_fitness, new_fitness))\n        best_indices = np.argsort(combined_fitness)[:population_size]\n        personal_best = combined_population[best_indices]\n        personal_best_fitness = combined_fitness[best_indices]\n\n        best_solution_idx = np.argmin(personal_best_fitness)\n        best_fitness = personal_best_fitness[best_solution_idx]\n        best_solution = personal_best[best_solution_idx]\n\n        # Adaptive learning rates adjustment\n        inertia_weight = max(0.4, inertia_weight * 0.99)\n        if evaluations % 1000 == 0:\n            mean_fitness = np.mean(personal_best_fitness)\n            if mean_fitness < best_fitness:\n                cognitive_factor *= 1.05\n                social_factor *= 1.05\n            else:\n                cognitive_factor *= 0.95\n                social_factor *= 0.95\n\n        # Diversity maintenance with fitness landscape analysis\n        if np.mean(personal_best_fitness) > diversity_threshold:\n            diversity_threshold = np.percentile(personal_best_fitness, 70)\n            reinit_indices = np.where(personal_best_fitness > diversity_threshold)[0]\n            np.random.shuffle(reinit_indices)\n            reinit_count = min(len(reinit_indices), int(0.1 * population_size))\n            personal_best[reinit_indices[:reinit_count]] = np.random.rand(reinit_count, num_vars) * (individual_upper - individual_lower) + individual_lower\n            personal_best_fitness[reinit_indices[:reinit_count]] = [objective_function(ind) for ind in personal_best[reinit_indices[:reinit_count]]]\n\n        # Adaptive population resizing\n        if evaluations % 5000 == 0:\n            if np.mean(personal_best_fitness) > best_fitness:\n                population_size = max(2, population_size // 2)\n            else:\n                population_size = min(100, population_size * 2)\n            personal_best = personal_best[:population_size]\n            personal_best_fitness = personal_best_fitness[:population_size]\n\n    return best_solution\n\n",
+        "fitnesses": [
+            8.013705421528282e-08,
+            0.0002246141724531192,
+            0.00266534847681348,
+            5.183906036572494e-09,
+            1.2216680445304754e-42,
+            2.2505875333378498,
+            7.483889130665958e-43
+        ],
+        "total_fitness": 2.2534775813080765
+    },
+    {
+        "Method": "GSPSO",
+        "results": [
+            1.013829019869354e-12,
+            8.15768857664878e-06,
+            5.152806406802178e-11,
+            1.1905754647423597e-07,
+            0.0,
+            7.440151952041672e-43,
+            7.440151952041672e-43
+        ],
+        "total_fitness": 8.276798665016104e-06
+    },
+    {
+        "Method": "DE_optimized",
+        "results": [
+            0.0,
+            7.549516567451064e-15,
+            0.0,
+            2.2496396739927866e-31,
+            0.0,
+            7.440151952041672e-43,
+            7.440151952041672e-43
+        ],
+        "total_fitness": 7.549516567451064e-15
+    }
+]

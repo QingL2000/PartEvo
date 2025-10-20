@@ -1,0 +1,44 @@
+[
+    {
+        "Method": "GA",
+        "results": [
+            2601789.2
+        ],
+        "total_fitness": 2601789.2
+    },
+    {
+        "Method": "GA-variant",
+        "results": [
+            14798557.6
+        ],
+        "total_fitness": 14798557.6
+    },
+    {
+        "Method": "DE",
+        "results": [
+            91784.6
+        ],
+        "total_fitness": 91784.6
+    },
+    {
+        "Method": "DE-variant",
+        "results": [
+            25736.4
+        ],
+        "total_fitness": 25736.4
+    },
+    {
+        "Method": "PSO",
+        "results": [
+            82953.9
+        ],
+        "total_fitness": 82953.9
+    },
+    {
+        "Method": "PSO-variant",
+        "results": [
+            32594.0
+        ],
+        "total_fitness": 32594.0
+    }
+]

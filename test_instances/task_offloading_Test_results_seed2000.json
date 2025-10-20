@@ -1,0 +1,157 @@
+{
+    "individual_results": [
+        {
+            "Method": "PartEvo",
+            "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\seed\\partevo_2000\\202505010455task_offloading_bb_2000\\best_sample_log.json",
+            "code": "import numpy as np\nfrom scipy.spatial import distance\n\ndef algo(initial_population, individual_upper, individual_lower, objective_function):\n    population = initial_population.copy()\n    num_individuals, num_variables = population.shape\n    evaluations = 0\n    best_solution = None\n    best_objective = float('inf')\n    memory_high = []\n    memory_low = []\n    stagnation_limit = 50\n    stagnation_count = 0\n    max_evaluations = 30000\n\n    while evaluations < max_evaluations:\n        diversity_metric = np.mean(distance.pdist(population))\n        mutation_factor = np.clip(0.5 * (1 - evaluations / max_evaluations), 0.1, 0.9)\n        crossover_rate = np.clip(0.5 * (1 - (diversity_metric / np.max([1e-10, diversity_metric]))), 0.1, 0.9)\n\n        for i in range(num_individuals):\n            if evaluations >= max_evaluations:\n                break\n            indices = list(range(num_individuals))\n            indices.remove(i)\n            a, b, c = np.random.choice(indices, 3, replace=False)\n            mutant = np.clip(population[a] + mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n            trial = np.copy(population[i])\n\n            for j in range(num_variables):\n                if np.random.rand() < crossover_rate:\n                    trial[j] = mutant[j]\n\n            f_trial = objective_function(trial)\n            evaluations += 1\n\n            if f_trial < best_objective:\n                best_objective = f_trial\n                best_solution = trial\n\n            if f_trial < objective_function(population[i]):\n                population[i] = trial\n                if f_trial < (np.percentile(memory_high, 25) if memory_high else float('inf')):\n                    memory_high.append(trial)\n                else:\n                    memory_low.append(trial)\n\n        adaptive_memory_size_high = max(1, min(10, len(memory_high) // 5))\n        adaptive_memory_size_low = max(1, min(10, len(memory_low) // 5))\n        memory_high = sorted(set(tuple(x) for x in memory_high), key=objective_function)[:adaptive_memory_size_high]\n        memory_low = sorted(set(tuple(x) for x in memory_low), key=objective_function)[:adaptive_memory_size_low]\n\n        for mem_solution in memory_high:\n            local_trial = np.copy(mem_solution)\n            perturbation_size = 0.1 * (1 - evaluations / max_evaluations)\n            perturbation = np.random.uniform(-perturbation_size, perturbation_size, size=num_variables)\n            local_trial = np.clip(local_trial + perturbation, individual_lower, individual_upper)\n            f_local = objective_function(local_trial)\n            evaluations += 1\n            \n            if f_local < best_objective:\n                best_objective = f_local\n                best_solution = local_trial\n\n        if stagnation_count >= stagnation_limit:\n            if len(memory_high) > 0 or len(memory_low) > 0:\n                new_candidates = np.random.uniform(individual_lower, individual_upper, size=(int(num_individuals * 0.1), num_variables))\n                population = np.vstack((population, new_candidates))\n            stagnation_count = 0\n\n        stagnation_count += 1\n\n    return best_solution",
+            "fitnesses": [
+                538.290997543218,
+                3943.8979066229945,
+                103.51895575110504,
+                1139.4792682804746,
+                50350.22297713997,
+                152.11937675345146
+            ],
+            "total_fitness": 56227.52948209122
+        },
+        {
+            "Method": "PartEvo",
+            "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\seed\\partevo_2000\\202505030124task_offloading_bb_2000\\best_sample_log.json",
+            "code": "import numpy as np\nfrom sklearn.cluster import KMeans\n\ndef algo(initial_population, individual_upper, individual_lower, objective_function):\n    population = initial_population.copy()\n    num_individuals, num_variables = population.shape\n    evaluations = 0\n    best_solution = None\n    best_objective = float('inf')\n    elite_memory = []\n    coalescent_memory = []\n    stagnation_counter = 0\n    stagnation_limit = 100\n    evaluation_limit = 30000\n    mutation_success = {'strategy1': 0, 'strategy2': 0, 'strategy3': 0}\n    mutation_attempts = {'strategy1': 0, 'strategy2': 0, 'strategy3': 0}\n\n    while evaluations < evaluation_limit:\n        for i in range(num_individuals):\n            if evaluations >= evaluation_limit:\n                break\n            indices = list(range(num_individuals))\n            indices.remove(i)\n            a, b, c = np.random.choice(indices, 3, replace=False)\n            selected_strategy = max(mutation_success, key=lambda k: mutation_success[k] / (mutation_attempts[k] + 1e-6))\n            current_mutation_factor = np.random.rand() * (0.7 if selected_strategy == 'strategy1' else 0.5 if selected_strategy == 'strategy2' else 1.0)\n\n            if selected_strategy == 'strategy1':\n                mutant = np.clip(population[a] + current_mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n            elif selected_strategy == 'strategy2':\n                mutant = np.clip(population[a] - current_mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n            else:\n                mutant = np.clip(population[a] + current_mutation_factor * (population[b] + population[c] - 2 * population[i]), individual_lower, individual_upper)\n\n            trial = np.where(np.random.rand(num_variables) < 0.5, mutant, population[i])\n            f_trial = objective_function(trial)\n            evaluations += 1\n            mutation_attempts[selected_strategy] += 1\n\n            if f_trial < best_objective:\n                best_objective = f_trial\n                best_solution = trial.copy()\n                elite_memory.append(best_solution.copy())\n                coalescent_memory.append(best_solution.copy())\n                stagnation_counter = 0\n                mutation_success[selected_strategy] += 1\n            else:\n                stagnation_counter += 1\n\n            if f_trial < objective_function(population[i]):\n                population[i] = trial\n\n        elite_memory = list(set(map(tuple, elite_memory)))\n        elite_size = max(1, len(elite_memory) // 4)\n        elite_memory = elite_memory[:elite_size]\n\n        coalescent_memory = list(set(map(tuple, coalescent_memory)))\n        coalescent_size = min(max(1, len(coalescent_memory) // 4), 15)\n        coalescent_memory = coalescent_memory[:coalescent_size]\n\n        if len(elite_memory) > 0:\n            kmeans = KMeans(n_clusters=min(5, len(elite_memory))).fit(elite_memory)\n            cluster_centers = kmeans.cluster_centers_\n            perturbation_scale = 0.1\n            \n            for center in cluster_centers:\n                local_trial = np.copy(center)\n                perturbation = np.random.uniform(-perturbation_scale, perturbation_scale, size=num_variables)\n                local_trial = np.clip(local_trial + perturbation, individual_lower, individual_upper)\n                f_local = objective_function(local_trial)\n                evaluations += 1\n                \n                if f_local < best_objective:\n                    best_objective = f_local\n                    best_solution = local_trial\n\n        if stagnation_counter > stagnation_limit:\n            evaluation_limit = min(evaluation_limit + 3000, 50000)\n\n    return best_solution",
+            "fitnesses": [
+                538.2908643984003,
+                3957.8882199290215,
+                103.518955751105,
+                1140.7232840009804,
+                53255.373586688846,
+                152.1193767534345
+            ],
+            "total_fitness": 59147.91428752179
+        },
+        {
+            "Method": "PartEvo",
+            "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\seed\\partevo_2000\\202505030124task_offloading_bb_2000\\best_sample_log.json",
+            "code": "import numpy as np\nfrom sklearn.cluster import KMeans\n\ndef algo(initial_population, individual_upper, individual_lower, objective_function):\n    population = initial_population.copy()\n    num_individuals, num_variables = population.shape\n    evaluations = 0\n    best_solution = None\n    best_objective = float('inf')\n    elite_memory = []\n    coalescent_memory = []\n    stagnation_counter = 0\n    stagnation_limit = 100\n    evaluation_limit = 30000\n    mutation_success = {'strategy1': 0, 'strategy2': 0, 'strategy3': 0}\n    mutation_attempts = {'strategy1': 0, 'strategy2': 0, 'strategy3': 0}\n\n    while evaluations < evaluation_limit:\n        for i in range(num_individuals):\n            if evaluations >= evaluation_limit:\n                break\n            indices = list(range(num_individuals))\n            indices.remove(i)\n            a, b, c = np.random.choice(indices, 3, replace=False)\n            selected_strategy = max(mutation_success, key=lambda k: mutation_success[k] / (mutation_attempts[k] + 1e-6))\n            current_mutation_factor = np.random.rand() * (0.7 if selected_strategy == 'strategy1' else 0.5 if selected_strategy == 'strategy2' else 1.0)\n\n            if selected_strategy == 'strategy1':\n                mutant = np.clip(population[a] + current_mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n            elif selected_strategy == 'strategy2':\n                mutant = np.clip(population[a] - current_mutation_factor * (population[b] - population[c]), individual_lower, individual_upper)\n            else:\n                mutant = np.clip(population[a] + current_mutation_factor * (population[b] + population[c] - 2 * population[i]), individual_lower, individual_upper)\n\n            trial = np.where(np.random.rand(num_variables) < 0.5, mutant, population[i])\n            f_trial = objective_function(trial)\n            evaluations += 1\n            mutation_attempts[selected_strategy] += 1\n\n            if f_trial < best_objective:\n                best_objective = f_trial\n                best_solution = trial.copy()\n                elite_memory.append(best_solution.copy())\n                coalescent_memory.append(best_solution.copy())\n                stagnation_counter = 0\n                mutation_success[selected_strategy] += 1\n            else:\n                stagnation_counter += 1\n\n            if f_trial < objective_function(population[i]):\n                population[i] = trial\n\n        elite_memory = list(set(map(tuple, elite_memory)))\n        elite_size = max(1, len(elite_memory) // 4)\n        elite_memory = elite_memory[:elite_size]\n\n        coalescent_memory = list(set(map(tuple, coalescent_memory)))\n        coalescent_size = min(max(1, len(coalescent_memory) // 4), 15)\n        coalescent_memory = coalescent_memory[:coalescent_size]\n\n        if len(elite_memory) > 0:\n            kmeans = KMeans(n_clusters=min(5, len(elite_memory))).fit(elite_memory)\n            cluster_centers = kmeans.cluster_centers_\n            perturbation_scale = 0.1\n            \n            for center in cluster_centers:\n                local_trial = np.copy(center)\n                perturbation = np.random.uniform(-perturbation_scale, perturbation_scale, size=num_variables)\n                local_trial = np.clip(local_trial + perturbation, individual_lower, individual_upper)\n                f_local = objective_function(local_trial)\n                evaluations += 1\n                \n                if f_local < best_objective:\n                    best_objective = f_local\n                    best_solution = local_trial\n\n        if stagnation_counter > stagnation_limit:\n            evaluation_limit = min(evaluation_limit + 3000, 50000)\n\n    return best_solution",
+            "fitnesses": [
+                538.2908643984003,
+                3964.33509257219,
+                103.518955751105,
+                1139.620112966891,
+                50509.08380822131,
+                152.1193767534345
+            ],
+            "total_fitness": 56406.96821066333
+        },
+        {
+            "Method": "Funsearch",
+            "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\seed\\funsearch_2000\\task_offloading_3\\20250428_213507_Problem_Method\\samples\\samples_best.json",
+            "code": "import numpy as np\ndef algo(initial_population: np.ndarray, individual_upper: np.ndarray, individual_lower: np.ndarray, objective_function: callable) -> np.ndarray:\n    \"\"\"\n    An algorithm for solving a minimization optimization problem. It allows up to 30,000 calls to the objective_function to evaluate solutions.\n\n    Args:\n    initial_population: np.ndarray\n        A 2D array where each row represents an individual solution in the initial population.\n    individual_upper: np.ndarray\n        A 1D array representing the upper bounds for each dimension of the solution.\n    individual_lower: np.ndarray\n        A 1D array representing the lower bounds for each dimension of the solution.\n    objective_function: callable\n        A Python function used to compute the objective value of candidate solutions. Lower objective values indicate better solutions.\n\n    Returns:\n    np.ndarray\n        The best solution found by the algorithm after 30,000 evaluations.\n    \"\"\"\n    population = initial_population.copy()\n    num_individuals, num_variables = population.shape\n    evaluations = 0\n    best_solution = None\n    best_objective = float('inf')\n    memory = []\n    mutation_rate = 0.3\n    crossover_rate = 0.7\n    max_evaluations = 30000\n    memory_limit = 100\n    diversity_threshold = 0.1\n    adaptation_factor = 0.95  # Factor to adopt mutation rate with a slower adaptation rate\n    local_search_scale = 0.1  # Slightly increased perturbation scale\n\n    # Initialize fitness values for the initial population\n    fitness_values = np.array([objective_function(ind) for ind in population])\n    evaluations += num_individuals  # All individuals evaluated at initialization\n\n    while evaluations < max_evaluations:\n        for i in range(num_individuals):\n            # Selection of three distinct individuals\n            indices = list(range(num_individuals))\n            indices.remove(i)  # Exclude current individual\n            a, b, c = np.random.choice(indices, 3, replace=False)\n\n            # Create a mutant vector\n            mutant = population[a] + mutation_rate * (population[b] - population[c])\n            mutant = np.clip(mutant, individual_lower, individual_upper)\n            trial = np.copy(population[i])\n\n            # Crossover between mutant and target vector\n            for j in range(num_variables):\n                if np.random.rand() < crossover_rate:\n                    trial[j] = mutant[j]\n\n            # Evaluate the trial vector\n            f_trial = objective_function(trial)\n            evaluations += 1\n\n            # Check for improvement\n            if f_trial < best_objective:\n                best_objective = f_trial\n                best_solution = trial\n\n            # Update population if trial is better\n            if f_trial < fitness_values[i]:\n                population[i] = trial\n                fitness_values[i] = f_trial\n\n                # Store successful trials in memory\n                if f_trial < best_objective:\n                    if len(memory) < memory_limit:\n                        memory.append(trial)\n                    else:\n                        # Replace the worst-performing memory element\n                        worst_index = np.argmax([objective_function(mem) for mem in memory])\n                        if f_trial < objective_function(memory[worst_index]):\n                            memory[worst_index] = trial\n\n        # Explore solutions in memory\n        if memory:\n            for mem_solution in memory:\n                local_trial = np.copy(mem_solution)\n                perturbation = np.random.uniform(-local_search_scale, local_search_scale, size=num_variables)\n                local_trial = np.clip(local_trial + perturbation, individual_lower, individual_upper)\n                f_local = objective_function(local_trial)\n                evaluations += 1\n\n                if f_local < best_objective:\n                    best_objective = f_local\n                    best_solution = local_trial\n\n        # Diversity maintenance check\n        unique, counts = np.unique(population, axis=0, return_counts=True)\n        if len(unique) < num_individuals * (1 - diversity_threshold):\n            new_individuals = np.random.uniform(individual_lower, individual_upper, size=(num_individuals // 4, num_variables))\n            population = np.concatenate((population, new_individuals))[:num_individuals]  # Keep only num_individuals\n\n        # Adaptive mutation and crossover strategies\n        if evaluations < (max_evaluations * 0.5):\n            # Make adjustments if the improvement is small\n            recent_improvements = np.min(fitness_values) - best_objective\n            if recent_improvements < 0.01:  # No significant improvement\n                mutation_rate = min(1.0, mutation_rate * 1.05)  # Encourage more exploration\n                crossover_rate = max(0.1, crossover_rate * 0.95)  # Slow down crossover if stagnating\n\n        # Update rates for adaptive strategies at the end of each iteration\n        mutation_rate = np.clip(mutation_rate * adaptation_factor, 0.1, 1.0)\n        crossover_rate = np.clip(crossover_rate + np.random.uniform(-0.02, 0.02), 0.1, 0.9)\n\n    return best_solution\n\n",
+            "fitnesses": [
+                538.2908669709259,
+                4089.90998720208,
+                103.518955751105,
+                1140.9579737624347,
+                51434.221165381074,
+                152.1193767534345
+            ],
+            "total_fitness": 57459.01832582105
+        },
+        {
+            "Method": "Eoh",
+            "paths": "D:\\00_Work\\00_CityU\\04_AEL_MEC\\partevo_v2\\results\\hie\\seed\\eoh_2000\\taskoffloading_10\\20250428_113234_Problem_EoH\\samples\\samples_best.json",
+            "code": "import numpy as np\ndef algo(initial_population: np.ndarray, individual_upper: np.ndarray, individual_lower: np.ndarray, objective_function: callable) -> np.ndarray:\n    \"\"\"\n    An algorithm for solving a minimization optimization problem. It allows up to 30,000 calls to the objective_function to evaluate solutions.\n\n    Args:\n    initial_population: np.ndarray\n        A 2D array where each row represents an individual solution in the initial population.\n    individual_upper: np.ndarray\n        A 1D array representing the upper bounds for each dimension of the solution.\n    individual_lower: np.ndarray\n        A 1D array representing the lower bounds for each dimension of the solution.\n    objective_function: callable\n        A Python function used to compute the objective value of candidate solutions. Lower objective values indicate better solutions.\n\n    Returns:\n    np.ndarray\n        The best solution found by the algorithm after 30,000 evaluations.\n    \"\"\"\n    max_evaluations = 30000\n    population_size, num_dimensions = initial_population.shape\n    evaluations = 0\n    \n    # Evaluate initial population\n    fitness = np.array([objective_function(ind) for ind in initial_population])\n    evaluations += population_size\n    \n    best_solution = initial_population[np.argmin(fitness)]\n    \n    while evaluations < max_evaluations:\n        new_population = np.copy(initial_population)\n        \n        for i in range(population_size):\n            # Determine best solution in the neighborhood\n            neighborhood_indices = np.random.choice(population_size, size=5, replace=False)\n            neighborhood_best = initial_population[neighborhood_indices][np.argmin(fitness[neighborhood_indices])]\n            \n            # Update position using flocking behavior\n            individual_best = initial_population[i]\n            random_factor = np.random.uniform(-1, 1, num_dimensions)\n            new_solution = (individual_best + neighborhood_best) / 2 + random_factor * (individual_best - neighborhood_best)\n            \n            # Bounds check\n            new_solution = np.clip(new_solution, individual_lower, individual_upper)\n            \n            # Evaluate new solution\n            new_fitness = objective_function(new_solution)\n            evaluations += 1\n            \n            # Selection mechanism\n            if new_fitness < fitness[i]:\n                new_population[i] = new_solution\n                fitness[i] = new_fitness\n        \n        initial_population = new_population\n        \n        # Update the best found solution\n        best_solution = initial_population[np.argmin(fitness)]\n    \n    return best_solution\n\n",
+            "fitnesses": [
+                538.2908643984006,
+                4150.775861027892,
+                103.518955751105,
+                1138.1714711875068,
+                53178.80486444292,
+                152.1193767534345
+            ],
+            "total_fitness": 59261.68139356126
+        }
+    ],
+    "algorithm_summaries": {
+        "PartEvo": {
+            "all_fitnesses": [
+                538.290997543218,
+                3943.8979066229945,
+                103.51895575110504,
+                1139.4792682804746,
+                50350.22297713997,
+                152.11937675345146,
+                538.2908643984003,
+                3957.8882199290215,
+                103.518955751105,
+                1140.7232840009804,
+                53255.373586688846,
+                152.1193767534345,
+                538.2908643984003,
+                3964.33509257219,
+                103.518955751105,
+                1139.620112966891,
+                50509.08380822131,
+                152.1193767534345
+            ],
+            "total_fitnesses": [
+                56227.52948209122,
+                59147.91428752179,
+                56406.96821066333
+            ],
+            "mean_fitness": 9543.467332237573,
+            "sem_fitness": 4549.959376321547,
+            "mean_total_fitness": 57260.80399342545,
+            "sem_total_fitness": 944.9759275401641
+        },
+        "Funsearch": {
+            "all_fitnesses": [
+                538.2908669709259,
+                4089.90998720208,
+                103.518955751105,
+                1140.9579737624347,
+                51434.221165381074,
+                152.1193767534345
+            ],
+            "total_fitnesses": [
+                57459.01832582105
+            ],
+            "mean_fitness": 9576.503054303508,
+            "sem_fitness": 8393.599555082796,
+            "mean_total_fitness": 57459.01832582105,
+            "sem_total_fitness": NaN
+        },
+        "Eoh": {
+            "all_fitnesses": [
+                538.2908643984006,
+                4150.775861027892,
+                103.518955751105,
+                1138.1714711875068,
+                53178.80486444292,
+                152.1193767534345
+            ],
+            "total_fitnesses": [
+                59261.68139356126
+            ],
+            "mean_fitness": 9876.946898926877,
+            "sem_fitness": 8682.374472890784,
+            "mean_total_fitness": 59261.68139356126,
+            "sem_total_fitness": NaN
+        }
+    },
+    "human_algorithm_results": [
+        {
+            "algorithm": "DE-variant",
+            "results": [
+                544.8254647892606,
+                3983.7245992405865,
+                103.5189557511049,
+                1141.442800614244,
+                53418.07678203356,
+                152.1193767534344
+            ],
+            "total_fitness": 59343.70797918219,
+            "mean_fitness": 9890.617996530365,
+            "sem_fitness": 8725.534607474827
+        }
+    ]
+}
