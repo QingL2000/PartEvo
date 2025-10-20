@@ -1,11 +1,11 @@
-from src.HIE.utils.getParas import Paras
-from src.HIE import HIE
-from src.HIE.problems.optimization.mec_task_offloading_blackbox.run import mec_instance
-from src.HIE.problems.optimization.machine_level_scheduling.run import Environment
+from src.PartEvo.utils.getParas import Paras
+from src.PartEvo import HIE
+from src.PartEvo.problems.optimization.mec_task_offloading_blackbox.run import mec_instance
+from src.PartEvo.problems.optimization.machine_level_scheduling.run import Environment
 from tqdm import tqdm
 
-# from src.HIE.problems.optimization import machine_level_scheduling
-# from src.HIE.problems.optimization.machine_level_scheduling.datainit_i30_p10_t30_np10 import Dataenv
+# from src.PartEvo.problems.optimization import machine_level_scheduling
+# from src.PartEvo.problems.optimization.machine_level_scheduling.datainit_i30_p10_t30_np10 import Dataenv
 
 # tasks = ["mec_task_offloading_new", "mec_task_offloading_blackbox", "single_mode", "multi_mode", "machine_level_scheduling"]
 # tasks = ["mec_task_offloading_blackbox", 'mec_task_offloading_new', 'machine_level_scheduling']

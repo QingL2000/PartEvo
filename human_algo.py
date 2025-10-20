@@ -1284,10 +1284,10 @@ def terrable_2792(initial_population, individual_upper, individual_lower, object
 
 
 if __name__ == '__main__':
-    from src.HIE.problems.optimization.mec_task_offloading_blackbox import MECENV, mec_instance
-    from src.HIE.problems.optimization.single_mode_blackbox import Baseline
-    from src.HIE.problems.optimization.machine_level_scheduling import MLSENV, Environment
-    from src.HIE.problems.optimization.multi_mode_blackbox import Baseline_multi
+    from src.PartEvo.problems.optimization.mec_task_offloading_blackbox import MECENV, mec_instance
+    from src.PartEvo.problems.optimization.single_mode_blackbox import Baseline
+    from src.PartEvo.problems.optimization.machine_level_scheduling import MLSENV, Environment
+    from src.PartEvo.problems.optimization.multi_mode_blackbox import Baseline_multi
     import time
 
     dim = 30
