@@ -20,12 +20,13 @@ A Niching-enhanced Evolution with LLMs for Automated Algorithm Discovery
 <img src="./docs/figures/EC_help_LES.png" alt="EC helps LES Framework Comparison" style="width:80%;" />
 </p>
 
-> [!Important]
-> This Rep will be maintained at a low frequency. Please visit our latest general-purpose Platform [LLM4AD](https://github.com/Optima-CityU/llm4ad)!
+> [!IMPORTANT]
+> **Maintenance Notice:** This standalone repository is now maintained at a low frequency. PartEvo has been officially integrated into our new, general-purpose platform, **[LLM4AD](https://github.com/Optima-CityU/llm4ad)**!
 > 
-> LLM4AD has a modulized framework with **diverse methods** (EoH, FunSearch, ReEvo, PartEvo, MLES, MCTS, etc) and tasks (Optimization, Machine learning, etc).
->
-> A Platform for **Evolutionary Computation** + **Large Language Model** for automatic algorithm design.
+> **Why use LLM4AD?**
+> * **Comprehensive:** A unified platform leveraging Evolutionary Computation and LLMs for automated algorithm design.
+> * **Modular:** Plug-and-play diverse methods (PartEvo, EoH, FunSearch, ReEvo, MLES, MCTS) and tasks (Optimization, ML).
+> * **Research-Ready:** Specifically designed to seamlessly support academic benchmarking and baseline comparisons.
 
 
 ---
