@@ -23,9 +23,10 @@ A Niching-enhanced Evolution with LLMs for Automated Algorithm Discovery
 > [!Important]
 > This Rep will be maintained at a low frequency. Please visit our latest general-purpose Platform [LLM4AD](https://github.com/Optima-CityU/llm4ad)!
 > 
-> LLM4AD has a modulized framework with diverse methods (EoH, FunSearch, etc) and tasks (Optimization, Machine learning, etc).
+> LLM4AD has a modulized framework with **diverse methods** (EoH, FunSearch, ReEvo, PartEvo, MLES, MCTS, etc) and tasks (Optimization, Machine learning, etc).
+>
+> A Platform for **Evolutionary Computation** + **Large Language Model** for automatic algorithm design.
 
-A Platform for **Evolutionary Computation** + **Large Language Model** for automatic algorithm design.
 
 ---
 ## 📢 News
